@@ -1,0 +1,231 @@
+#include <iostream>
+#include <queue>
+using namespace std;
+
+class binaryNode {
+protected:
+    int data;
+    binaryNode* left;
+    binaryNode* right;
+public:
+    binaryNode(int val, binaryNode* newL = NULL, binaryNode* newR = NULL) {
+        data = val;
+        left = newL;
+        right = newR;
+    }
+    ~binaryNode() {}
+
+    void setData(int val) { data = val; } 
+    void setLeft(binaryNode* newL) { left = newL; }
+    void setRight(binaryNode* newR) { right = newR; }
+
+    binaryNode* getLeft() { return left; }
+    binaryNode* getRight() { return right; }
+    int getData() { return data; };
+
+    bool isLeaf() { return left == NULL && right == NULL; }
+};
+
+class binaryTree {
+    binaryNode* root;
+public:
+    binaryTree() { root = NULL; }
+    ~binaryTree() {}
+
+    //트리가 비었는지 확인
+    bool isEmpty() { return root == NULL; }
+
+    //루트의 주솟값 반환
+    void setRoot(binaryNode* node) { root = node; }
+
+    //삽입
+    void insert(int val) {
+        insert(val, root);
+    }
+    void insert(int val, binaryNode* node) {
+        if (isEmpty()) {
+            setRoot(new binaryNode(val));
+        }
+        else {
+            int key = node->getData();
+            if (val < key) {
+                if (node->getLeft() != NULL) insert(val, node->getLeft());
+                else node->setLeft(new binaryNode(val));
+            }
+            else if (key < val) {
+                if (node->getRight() != NULL) insert(val, node->getRight());
+                else node->setRight(new binaryNode(val));
+            }
+        }
+    }
+
+    //제거
+    void remove(int val) {
+        binaryNode* pNode = NULL;
+        binaryNode* cNode = root;
+        while (cNode->getData() != val && cNode != NULL) {
+            pNode = cNode;
+            cNode = val < cNode->getData() ? cNode->getLeft() : cNode->getRight();
+        }
+
+        //제거할 노드가 cNode 제거할 노드의 부모노드가 pNode
+        if (cNode != NULL) remove(pNode, cNode);
+    }
+    void remove(binaryNode* pNode, binaryNode* cNode) {
+        binaryNode* deleteNode = cNode;
+        if (pNode == NULL) {
+            root = NULL;
+        }
+        //단말노드
+        else if (cNode->isLeaf()) {
+            if (pNode->getLeft() == cNode) pNode->setLeft(NULL);
+            else pNode->setRight(NULL);
+        }
+        //서브노드둘
+        else if (cNode->getRight() != NULL && cNode->getLeft() != NULL) {
+            binaryNode* nPNode = cNode;
+            binaryNode* nCNode = cNode->getRight();
+            //새로운 부모노드와 자식노드를 선언하고 제거할 노드와 가장 비슷한 값을 가진 노드를 탐색하는 과정
+            while (nCNode->getLeft() != NULL) {
+                nPNode = nCNode;
+                nCNode = nCNode->getLeft();
+            }
+
+            //제거할 노드의 오른쪽 서브노드(이 서브노드의 가장 왼쪽 아랫 노드가 대체할 노드)가 오른쪽 방향의 노드만 소유할 경우
+            //오른쪽 서브노드가 단말노드인 경우도 포함
+            if (nPNode == cNode) {
+                cNode->getRight()->setLeft(cNode->getLeft());
+
+                if (pNode->getLeft() == cNode) pNode->setLeft(nCNode);
+                else pNode->setRight(nCNode);
+            }
+            //제거할 노드의 오른쪽 서브노드가 왼쪽 방향의 노드를 소유 할 경우
+            else {
+                cNode->setData(nCNode->getData());
+                nPNode->setLeft(NULL);
+                delete nCNode;
+            }
+        }
+        //서브노드하나
+        else {
+            if (pNode->getLeft() == cNode) {
+                if (cNode->getLeft() != NULL) {
+                    pNode->setLeft(cNode->getLeft());
+                }
+                else {
+                    pNode->setLeft(cNode->getRight());
+                }
+            }
+            else {
+                if (cNode->getLeft() != NULL) {
+                    pNode->setRight(cNode->getLeft());
+                }
+                else {
+                    pNode->setRight(cNode->getRight());
+                }
+
+            }
+        }
+        delete deleteNode;
+    }
+
+    //높이를 확인하는 함수
+    int getHeight() {
+        if (isEmpty()) return 0;
+        else getHeight(root);
+    }
+    int getHeight(binaryNode* node) {
+        if (node == NULL) return 0;
+        else {
+            int hLeft = getHeight(node->getLeft());
+            int hRight = getHeight(node->getRight());
+            return hLeft > hRight ? hLeft + 1 : hRight + 1;
+        }
+    }
+
+    //밸런스 확인
+    bool isBalance() {
+        return isBalance(root);
+    }
+    bool isBalance(binaryNode* node) {
+        //한 노드의 서브노드 높이가 밸런스이면서 ...1
+        if (oneBalance(node)) {
+            //그 노드가 NULL값이 아니면...2-1
+            if (node != NULL) {
+                //노드의 서브노드의 밸런스를 다시 확인...3
+                if (isBalance(node->getLeft()) == 0 || isBalance(node->getRight()) == 0) return 0;
+                else return 1;
+            }
+            //그 노드가 NULL값이면 아무것도 하지 않고 1만 반환...2-2
+            else return 1;
+        }
+        else return 0;
+    }
+    //한 노드의 서브노드 높이만 비교
+    bool oneBalance(binaryNode* node) {
+        if (node == NULL) { return 1; }
+        else {
+            int hLeft = getHeight(node->getLeft());
+            int hRight = getHeight(node->getRight());
+            int val = hLeft - hRight;
+            return val == 1 || val == -1 || val == 0;
+        }
+    }
+
+    void inorder() {
+        cout << "\nInorder data : ";
+        inorder(root);
+    }
+    void inorder(binaryNode* node) {
+        if (node != NULL) {
+            inorder(node->getLeft());
+            printf("[%d]", node->getData());
+            inorder(node->getRight());
+        }
+    }
+
+    void preorder() {
+        cout << "\npreorder data : ";
+        preorder(root);
+    }
+    void preorder(binaryNode* node) {
+        if (node != NULL) {
+            printf("[%d]", node->getData());
+            preorder(node->getLeft());
+            preorder(node->getRight());
+        }
+    }
+};
+
+binaryTree tree;
+
+void litmusA();
+
+int main()
+{
+    litmusA();
+
+    //작업횟수 caseN, 받을 숫자 num
+    int caseN, num;
+    //I면 In D면 remove
+    char inOut;
+    cin >> caseN;
+    for (int i = 0; i < caseN; i++) {
+        cin >> inOut >> num;
+        if (inOut == 'I') tree.insert(num);
+        else tree.remove(num);
+    }
+    
+    //밸런스가 맞으면 Balanced  출력
+    if (tree.isBalance()) cout << "Balanced";
+    else cout << "Unbalanced";
+
+    tree.inorder();
+    tree.preorder();
+
+    return 0;
+}
+
+void litmusA() {
+   
+}
